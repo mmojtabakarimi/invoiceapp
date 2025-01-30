@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { InvoicesController } from './invoices.controller';
-import { InvoicesService } from './invoices.service';
+import { InvoiceService } from './invoices.service';
 import { Invoice, InvoiceSchema } from './schemas/invoice.schema';
 
 @Module({
@@ -11,6 +11,6 @@ import { Invoice, InvoiceSchema } from './schemas/invoice.schema';
     ]),
   ],
   controllers: [InvoicesController],
-  providers: [InvoicesService],
+  providers: [InvoiceService],
 })
-export class InvoicesModule {} 
+export class InvoicesModule {}

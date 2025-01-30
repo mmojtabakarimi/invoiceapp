@@ -1,0 +1,44 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: root123
+          MONGO_INITDB_DATABASE: invoiceapp
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./invoiceapp
+
+      - name: Run tests
+        run: npm test
+        working-directory: ./invoiceapp
+        env:
+          MONGODB_URI: mongodb://root:root123@localhost:27017/invoiceapp
+
+      - name: Run e2e tests
+        run: npm run test:e2e
+        working-directory: ./invoiceapp
+        env:
+          MONGODB_URI: mongodb://root:root123@localhost:27017/invoiceapp 

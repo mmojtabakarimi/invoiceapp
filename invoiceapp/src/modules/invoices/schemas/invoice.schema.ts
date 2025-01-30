@@ -6,19 +6,24 @@ export type InvoiceDocument = Invoice & Document;
 @Schema({ timestamps: true })
 export class Invoice {
   @Prop({ required: true })
-  invoiceNumber: string;
+  customer: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, type: Number })
   amount: number;
 
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
+  reference: string;
+
+  @Prop({ required: true, type: Date })
   date: Date;
 
-  @Prop()
-  description: string;
-
-  @Prop({ default: 'pending' })
-  status: string;
+  @Prop([
+    {
+      sku: { type: String, required: true },
+      qt: { type: Number, required: true },
+    },
+  ])
+  items: { sku: string; qt: number }[];
 }
 
-export const InvoiceSchema = SchemaFactory.createForClass(Invoice); 
+export const InvoiceSchema = SchemaFactory.createForClass(Invoice);

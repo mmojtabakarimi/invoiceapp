@@ -1,6 +1,6 @@
 # Compiled output
-/dist
-/node_modules
+/invoiceapp/dist
+/invoiceapp/node_modules/
 
 # Logs
 logs
@@ -50,5 +50,3 @@ lerna-debug.log*
 /.build
 
 
-./invoiceapp/node_modules
-./invoiceapp/dist
