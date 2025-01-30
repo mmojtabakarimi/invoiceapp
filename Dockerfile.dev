@@ -1,0 +1,10 @@
+# Use Node.js LTS as the base image
+FROM node:18
+
+RUN npm install -g @nestjs/cli
+
+WORKDIR /app
+
+COPY ./invoiceapp/package*.json .
+
+RUN npm install
