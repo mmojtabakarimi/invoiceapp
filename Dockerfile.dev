@@ -1,8 +1,15 @@
-# Use Node.js LTS as the base image
-FROM node:18
+FROM node:20-alpine
 
 RUN npm install -g @nestjs/cli
-
 WORKDIR /app
 
+# Install basic development tools
+RUN apk add --no-cache git
 
+# Ensure directory exists and set permissions
+RUN mkdir -p /app && chown -R node:node /app
+
+# Switch to non-root user
+USER node
+
+EXPOSE 3000 

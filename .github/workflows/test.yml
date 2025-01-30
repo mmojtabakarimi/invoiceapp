@@ -1,6 +1,8 @@
 name: Test
 
 on:
+  push:
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -19,23 +21,33 @@ jobs:
           MONGO_INITDB_DATABASE: invoiceapp
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies and run tests (Invoice App)
         working-directory: ./invoiceapp
+        run: |
+          npm ci
+          npm test
 
-      - name: Run tests
-        run: npm test
-        working-directory: ./invoiceapp
-        env:
-          MONGODB_URI: mongodb://root:root123@localhost:27017/invoiceapp
+      - name: Install dependencies and run tests (Email Sender)
+        working-directory: ./email-sender
+        run: |
+          npm ci
+          npm test
+
+      - name: Upload test coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          path: |
+            invoiceapp/coverage
+            email-sender/coverage
 
       - name: Run e2e tests
         run: npm run test:e2e

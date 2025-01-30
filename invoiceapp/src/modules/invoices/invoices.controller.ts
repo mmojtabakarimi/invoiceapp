@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Delete, Put, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Put,
+  Param,
+  Body,
+  Query,
+} from '@nestjs/common';
 import { InvoiceService } from './invoices.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { UpdateInvoiceDto } from './dto/update-invoice.dto';
@@ -29,7 +38,21 @@ export class InvoicesController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() updateInvoiceDto: UpdateInvoiceDto): Promise<Invoice> {
+  async update(
+    @Param('id') id: string,
+    @Body() updateInvoiceDto: UpdateInvoiceDto,
+  ): Promise<Invoice> {
     return this.invoiceService.update(id, updateInvoiceDto);
+  }
+
+  @Get('reports/daily')
+  async getDailySalesReport(@Query('date') dateStr?: string) {
+    const date = dateStr ? new Date(dateStr) : new Date();
+    return this.invoiceService.generateSalesReportForDate(date);
+  }
+
+  @Post('reports/generate')
+  async triggerDailyReport() {
+    return this.invoiceService.generateDailySalesReport();
   }
 }

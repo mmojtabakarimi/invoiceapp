@@ -68,11 +68,18 @@ src/
 └── config/            # Configuration files
 ```
 
-## Contributing
+### RabbitMQ
 
-1. Create a new branch
-2. Make your changes
-3. Submit a pull request
+RabbitMQ is used to send messages to the invoice service.
+
+### RabbitMQ Management UI
+
+RabbitMQ Management UI is available at http://localhost:15672.
+
+### RabbitMQ Admin UI
+
+RabbitMQ Admin UI is available at http://localhost:15672.   
+
 
 ## License
 

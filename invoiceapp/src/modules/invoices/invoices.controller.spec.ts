@@ -72,4 +72,4 @@ describe('InvoicesController', () => {
       expect(service.findOne).toHaveBeenCalledWith('some-id');
     });
   });
-}); 
+});

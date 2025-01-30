@@ -1,6 +1,8 @@
 # Compiled output
 /invoiceapp/dist
 /invoiceapp/node_modules/
+/email-sender/dist
+/email-sender/node_modules/
 
 # Logs
 logs

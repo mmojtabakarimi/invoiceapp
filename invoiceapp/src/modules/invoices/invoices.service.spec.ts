@@ -4,14 +4,18 @@ import { Model } from 'mongoose';
 import { InvoiceService } from './invoices.service';
 import { Invoice, InvoiceDocument } from './schemas/invoice.schema';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { RabbitMQService } from '../shared/services/rabbitmq.service';
+import { Types } from 'mongoose';
 
 describe('InvoiceService', () => {
   let service: InvoiceService;
   let model: Model<InvoiceDocument>;
+  let rabbitMQService: Partial<RabbitMQService>;
 
+  const mockId = new Types.ObjectId().toString();
   const mockInvoice = {
-    _id: 'some-id',
+    _id: mockId,
     customer: 'Test Customer',
     amount: 100,
     reference: 'INV-001',
@@ -28,6 +32,11 @@ describe('InvoiceService', () => {
   };
 
   beforeEach(async () => {
+    rabbitMQService = {
+      onModuleInit: jest.fn().mockResolvedValue(undefined),
+      publishDailySalesReport: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InvoiceService,
@@ -44,6 +53,10 @@ describe('InvoiceService', () => {
             exec: jest.fn(),
           },
         },
+        {
+          provide: RabbitMQService,
+          useValue: rabbitMQService,
+        },
       ],
     }).compile();
 
@@ -58,7 +71,7 @@ describe('InvoiceService', () => {
   describe('create', () => {
     it('should create a new invoice', async () => {
       jest.spyOn(model, 'create').mockResolvedValueOnce(mockInvoice as any);
-      
+
       const result = await service.create(mockCreateInvoiceDto);
       expect(result).toEqual(mockInvoice);
     });
@@ -69,7 +82,7 @@ describe('InvoiceService', () => {
       jest.spyOn(model, 'find').mockReturnValue({
         exec: jest.fn().mockResolvedValueOnce([mockInvoice]),
       } as any);
-      
+
       const result = await service.findAll();
       expect(result).toEqual([mockInvoice]);
     });
@@ -80,17 +93,43 @@ describe('InvoiceService', () => {
       jest.spyOn(model, 'findById').mockReturnValue({
         exec: jest.fn().mockResolvedValueOnce(mockInvoice),
       } as any);
-      
-      const result = await service.findOne('some-id');
+
+      const result = await service.findOne(mockId);
       expect(result).toEqual(mockInvoice);
+    });
+
+    it('should throw BadRequestException for invalid ID format', async () => {
+      await expect(service.findOne('invalid-id')).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(model.findById).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when invoice not found', async () => {
       jest.spyOn(model, 'findById').mockReturnValue({
         exec: jest.fn().mockResolvedValueOnce(null),
       } as any);
-      
-      await expect(service.findOne('wrong-id')).rejects.toThrow(NotFoundException);
+
+      await expect(service.findOne(mockId)).rejects.toThrow(NotFoundException);
     });
   });
-}); 
+
+  describe('generateDailySalesReport', () => {
+    it('should generate and publish daily report', async () => {
+      const mockInvoices = [
+        { ...mockInvoice, amount: 100 },
+        { ...mockInvoice, amount: 200 },
+      ];
+
+      jest.spyOn(model, 'find').mockReturnValue({
+        exec: jest.fn().mockResolvedValueOnce(mockInvoices),
+      } as any);
+
+      const report = await service.generateDailySalesReport();
+
+      expect(report.totalSales).toBe(300);
+      expect(report.itemsSold).toHaveLength(1);
+      expect(rabbitMQService.publishDailySalesReport).toHaveBeenCalled();
+    });
+  });
+});
