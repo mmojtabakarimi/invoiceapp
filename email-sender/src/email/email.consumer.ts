@@ -33,7 +33,7 @@ export class EmailConsumer implements OnModuleInit {
             await this.emailService.sendDailySalesReport(report);
             this.channel.ack(msg);
           } catch (error) {
-            console.error('Error processing message:', error);
+            //console.error('Error processing message:', error);
             // Reject the message and requeue it
             this.channel.nack(msg, false, true);
           }

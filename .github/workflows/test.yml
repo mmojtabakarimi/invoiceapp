@@ -18,7 +18,7 @@ jobs:
         env:
           MONGO_INITDB_ROOT_USERNAME: root
           MONGO_INITDB_ROOT_PASSWORD: root123
-          MONGO_INITDB_DATABASE: invoiceapp
+          MONGO_INITDB_DATABASE: invoicedb
 
     steps:
       - uses: actions/checkout@v3
@@ -53,4 +53,4 @@ jobs:
         run: npm run test:e2e
         working-directory: ./invoiceapp
         env:
-          MONGODB_URI: mongodb://root:root123@localhost:27017/invoiceapp 
+          MONGODB_URI: mongodb://root:root123@mongodb:27017/invoicedb

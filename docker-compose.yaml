@@ -13,10 +13,11 @@ services:
       - ./invoiceapp:/app
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://root:root123@mongodb:27017/invoiceapp
+      - MONGODB_URI=mongodb://root:root123@mongodb:27017/invoicedb
     depends_on:
       - mongodb
-    command: sh -c "npm install && npm run start:dev"
+      - rabbitmq
+    command: sh -c "sleep 20 && npm install && npm run start:dev"
 
   # MongoDB Database
   mongodb:
@@ -27,10 +28,11 @@ services:
       - '27017:27017'
     volumes:
       - mongodb_data:/data/db
+      - ./mongodb-init.sh:/docker-entrypoint-initdb.d/mongodb-init.sh
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=root123
-      - MONGO_INITDB_DATABASE=invoiceapp
+      - MONGO_INITDB_DATABASE=invoicedb
 
   # MongoDB Express
   mongo-express:
@@ -68,7 +70,8 @@ services:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
     depends_on:
       - rabbitmq
-    command: sh -c "npm install && npm run start:dev"
+      - mongodb
+    command: sh -c "sleep 20 && npm install && npm run start:dev"
 
 volumes:
   mongodb_data:
