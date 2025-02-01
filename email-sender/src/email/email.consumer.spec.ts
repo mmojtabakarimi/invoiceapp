@@ -1,27 +1,26 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
-import { EmailConsumer } from './email.consumer';
-import { EmailService } from './email.service';
-import { Channel, Connection, ConsumeMessage } from 'amqplib';
+import { Test, TestingModule } from "@nestjs/testing";
+import { ConfigService } from "@nestjs/config";
+import { EmailConsumer } from "./email.consumer";
+import { EmailService } from "./email.service";
+import { Channel, Connection, ConsumeMessage, connect } from "amqplib";
 
-jest.mock('amqplib', () => ({
+jest.mock("amqplib", () => ({
   connect: jest.fn(),
 }));
 
-describe('EmailConsumer', () => {
+describe("EmailConsumer", () => {
   let consumer: EmailConsumer;
   let emailService: EmailService;
-  let configService: ConfigService;
   let channel: Partial<Channel>;
   let connection: Partial<Connection>;
 
   const mockReport = {
-    date: '2024-01-30',
-    totalSales: 1000.50,
+    date: "2024-01-30",
+    totalSales: 1000.5,
     itemsSummary: [
-      { sku: 'ITEM-123', totalQuantity: 5 },
-      { sku: 'ITEM-456', totalQuantity: 3 }
-    ]
+      { sku: "ITEM-123", totalQuantity: 5 },
+      { sku: "ITEM-456", totalQuantity: 3 },
+    ],
   };
 
   beforeEach(async () => {
@@ -36,7 +35,7 @@ describe('EmailConsumer', () => {
       createChannel: jest.fn().mockResolvedValue(channel),
     };
 
-    (require('amqplib').connect as jest.Mock).mockResolvedValue(connection);
+    (connect as jest.Mock).mockResolvedValue(connection);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -52,8 +51,8 @@ describe('EmailConsumer', () => {
           useValue: {
             get: jest.fn().mockImplementation((key: string) => {
               const config = {
-                'rabbitmq.url': 'amqp://localhost',
-                'rabbitmq.queue.dailySalesReport': 'daily_sales_report',
+                "rabbitmq.url": "amqp://localhost",
+                "rabbitmq.queue.dailySalesReport": "daily_sales_report",
               };
               return config[key];
             }),
@@ -64,28 +63,29 @@ describe('EmailConsumer', () => {
 
     consumer = module.get<EmailConsumer>(EmailConsumer);
     emailService = module.get<EmailService>(EmailService);
-    configService = module.get<ConfigService>(ConfigService);
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(consumer).toBeDefined();
   });
 
-  describe('onModuleInit', () => {
-    it('should connect to RabbitMQ and setup channel', async () => {
+  describe("onModuleInit", () => {
+    it("should connect to RabbitMQ and setup channel", async () => {
       await consumer.onModuleInit();
 
-      expect(require('amqplib').connect).toHaveBeenCalledWith('amqp://localhost');
+      expect(connect).toHaveBeenCalledWith("amqp://localhost");
       expect(connection.createChannel).toHaveBeenCalled();
-      expect(channel.assertQueue).toHaveBeenCalledWith('daily_sales_report', { durable: true });
+      expect(channel.assertQueue).toHaveBeenCalledWith("daily_sales_report", {
+        durable: true,
+      });
     });
 
-    it('should setup message consumer', async () => {
+    it("should setup message consumer", async () => {
       await consumer.onModuleInit();
 
       expect(channel.consume).toHaveBeenCalled();
       const consumeCallback = (channel.consume as jest.Mock).mock.calls[0][1];
-      
+
       // Test successful message processing
       const message = {
         content: Buffer.from(JSON.stringify(mockReport)),
@@ -93,17 +93,19 @@ describe('EmailConsumer', () => {
 
       await consumeCallback(message);
 
-      expect(emailService.sendDailySalesReport).toHaveBeenCalledWith(mockReport);
+      expect(emailService.sendDailySalesReport).toHaveBeenCalledWith(
+        mockReport,
+      );
       expect(channel.ack).toHaveBeenCalledWith(message);
     });
 
-    it('should handle invalid message content', async () => {
+    it("should handle invalid message content", async () => {
       await consumer.onModuleInit();
 
       const consumeCallback = (channel.consume as jest.Mock).mock.calls[0][1];
-      
+
       const invalidMessage = {
-        content: Buffer.from('invalid json'),
+        content: Buffer.from("invalid json"),
       } as ConsumeMessage;
 
       await consumeCallback(invalidMessage);
@@ -112,4 +114,4 @@ describe('EmailConsumer', () => {
       expect(channel.nack).toHaveBeenCalledWith(invalidMessage, false, true);
     });
   });
-}); 
+});

@@ -1,7 +1,7 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { connect, Channel, Connection } from 'amqplib';
-import { EmailService } from './email.service';
+import { Injectable, OnModuleInit } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { connect, Channel, Connection } from "amqplib";
+import { EmailService } from "./email.service";
 
 @Injectable()
 export class EmailConsumer implements OnModuleInit {
@@ -13,20 +13,23 @@ export class EmailConsumer implements OnModuleInit {
     private emailService: EmailService,
   ) {}
 
-  async onModuleInit() {
+  async onModuleInit(): Promise<void> {
     await this.connect();
   }
 
-  private async connect() {
+  private async connect(): Promise<void> {
     try {
-      this.connection = await connect(this.configService.get<string>('rabbitmq.url'));
+      const rabbitMqUrl = this.configService.get<string>("rabbitmq.url");
+      this.connection = await connect(rabbitMqUrl);
       this.channel = await this.connection.createChannel();
-      
-      const queue = this.configService.get<string>('rabbitmq.queue.dailySalesReport');
-      await this.channel.assertQueue(queue, { durable: true });
-      
+
+      const queueName = this.configService.get<string>(
+        "rabbitmq.queue.dailySalesReport",
+      );
+      await this.channel.assertQueue(queueName, { durable: true });
+
       // Start consuming messages
-      this.channel.consume(queue, async (msg) => {
+      this.channel.consume(queueName, async (msg) => {
         if (msg) {
           try {
             const report = JSON.parse(msg.content.toString());
@@ -40,11 +43,11 @@ export class EmailConsumer implements OnModuleInit {
         }
       });
 
-      console.log('Connected to RabbitMQ and waiting for messages...');
+      console.log("Connected to RabbitMQ and waiting for messages...");
     } catch (error) {
-      console.error('Failed to connect to RabbitMQ:', error);
+      console.error("Failed to connect to RabbitMQ:", error);
       // Retry connection after delay
       setTimeout(() => this.connect(), 5000);
     }
   }
-} 
+}

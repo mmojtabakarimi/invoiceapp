@@ -5,4 +5,4 @@ export interface DailySalesReport {
     sku: string;
     totalQuantity: number;
   }[];
-} 
+}

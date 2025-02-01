@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { EmailModule } from './email/email.module';
-import rabbitmqConfig from './config/rabbitmq.config';
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { EmailModule } from "./email/email.module";
+import rabbitmqConfig from "./config/rabbitmq.config";
 
 @Module({
   imports: [
@@ -12,4 +12,4 @@ import rabbitmqConfig from './config/rabbitmq.config';
     EmailModule,
   ],
 })
-export class AppModule {} 
+export class AppModule {}
