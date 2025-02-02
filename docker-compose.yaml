@@ -4,7 +4,8 @@ services:
   # NestJS Application
   app:
     container_name: invoiceapp
-    image: invoiceapp:latest
+
+    image: invoiceapp:node20
     hostname: invoiceapp
     ports:
       - "3000:3000"
@@ -12,10 +13,11 @@ services:
       - ./invoiceapp:/app
     environment:
       - NODE_ENV=development
-      - MONGODB_URI=mongodb://root:root123@mongodb:27017/invoiceapp
+      - MONGODB_URI=mongodb://root:root123@mongodb:27017/invoicedb
     depends_on:
       - mongodb
-    command: npm run start:dev
+      - rabbitmq
+    command: sh -c "sleep 20 && npm install && npm run start:dev"
 
   # MongoDB Database
   mongodb:
@@ -26,10 +28,11 @@ services:
       - '27017:27017'
     volumes:
       - mongodb_data:/data/db
+      - ./mongodb-init.sh:/docker-entrypoint-initdb.d/mongodb-init.sh
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=root123
-      - MONGO_INITDB_DATABASE=invoiceapp
+      - MONGO_INITDB_DATABASE=invoicedb
 
   # MongoDB Express
   mongo-express:
@@ -44,5 +47,32 @@ services:
     depends_on:
       - mongodb
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"   # AMQP protocol port
+      - "15672:15672" # Management UI port
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  email-sender:
+    container_name: email-sender
+    image: invoiceapp:node20
+    volumes:
+      - ./email-sender:/app
+    environment:
+      - NODE_ENV=development
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - rabbitmq
+      - mongodb
+    command: sh -c "sleep 20 && npm install && npm run start:dev"
+
 volumes:
   mongodb_data:
+  rabbitmq_data:
